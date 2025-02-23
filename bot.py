@@ -3,17 +3,14 @@ from discord.ext import commands
 import re
 from dice_roller import DiceRoller
 from dice_statistics import DiceStatistics
-from config import (
-    PREFIX, ROLL_COMMAND, DICE_HELP_COMMAND,
-    ERROR_INVALID_FORMAT, HELP_MESSAGE
-)
+from config import CONFIG
 
 # Create bot instance with required intents
 intents = discord.Intents.default()
 intents.message_content = True  # Enable message content intent
 
 bot = commands.Bot(
-    command_prefix=PREFIX,
+    command_prefix=CONFIG["PREFIX"],
     help_command=None,
     intents=intents
 )
@@ -26,10 +23,10 @@ dice_stats = DiceStatistics()
 async def on_ready():
     """Event handler for when the bot is ready and connected to Discord."""
     print(f'{bot.user} has connected to Discord!')
-    print(f'Bot is ready with prefix: {PREFIX}')
-    await bot.change_presence(activity=discord.Game(name=f"{PREFIX}{DICE_HELP_COMMAND} for commands"))
+    print(f'Bot is ready with prefix: {CONFIG["PREFIX"]}')
+    await bot.change_presence(activity=discord.Game(name=f"{CONFIG['PREFIX']}{CONFIG['DICE_HELP_COMMAND']} for commands"))
 
-@bot.command(name=ROLL_COMMAND)
+@bot.command(name=CONFIG["ROLL_COMMAND"])
 async def roll(ctx, *, dice_str: str):
     """
     Command to roll dice based on the input string format NdM.
@@ -41,7 +38,7 @@ async def roll(ctx, *, dice_str: str):
 
     if not match:
         print(f"Invalid format: {dice_str}")
-        await ctx.send(ERROR_INVALID_FORMAT)
+        await ctx.send(CONFIG["ERROR_INVALID_FORMAT"])
         return
 
     try:
@@ -49,7 +46,7 @@ async def roll(ctx, *, dice_str: str):
         num_faces = int(match.group(2))
     except ValueError:
         print(f"Value error parsing: {dice_str}")
-        await ctx.send(ERROR_INVALID_FORMAT)
+        await ctx.send(CONFIG["ERROR_INVALID_FORMAT"])
         return
 
     # Validate input
@@ -130,12 +127,12 @@ async def probability(ctx, *, args: str):
     )
     await ctx.send(embed=embed)
 
-@bot.command(name=DICE_HELP_COMMAND)
+@bot.command(name=CONFIG["DICE_HELP_COMMAND"])
 async def dice_help(ctx):  
     """Command to display help information."""
     print(f"Help command received from {ctx.author.name}")
-    help_text = HELP_MESSAGE + "\n\n**Statistics Commands:**\n"
-    help_text += f"`{PREFIX}probability NdM X` - Calculate probability of rolling X with NdM dice\n"
+    help_text = CONFIG["HELP_MESSAGE"] + "\n\n**Statistics Commands:**\n"
+    help_text += f"`{CONFIG['PREFIX']}probability NdM X` - Calculate probability of rolling X with NdM dice\n"
 
     embed = discord.Embed(
         title="Dice Roller Bot Help",
@@ -150,16 +147,15 @@ async def on_command_error(ctx, error):
     """Global error handler for bot commands."""
     print(f"Command error occurred: {str(error)}")
     if isinstance(error, commands.errors.MissingRequiredArgument):
-        await ctx.send(ERROR_INVALID_FORMAT)
+        await ctx.send(CONFIG["ERROR_INVALID_FORMAT"])
     elif isinstance(error, commands.errors.CommandNotFound):
-        await ctx.send(f"Unknown command. Use {PREFIX}{DICE_HELP_COMMAND} for available commands.")
+        await ctx.send(f"Unknown command. Use {CONFIG['PREFIX']}{CONFIG['DICE_HELP_COMMAND']} for available commands.")
     else:
         await ctx.send(f"An error occurred: {str(error)}")
 
 # Run the bot (token should be provided as environment variable)
 if __name__ == "__main__":
-    import os
-    TOKEN = os.getenv('DISCORD_TOKEN')
+    TOKEN = CONFIG["TOKEN"]
     if not TOKEN:
         print("Error: DISCORD_TOKEN environment variable not set")
         exit(1)
